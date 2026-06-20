@@ -60,7 +60,15 @@ docker run --rm -p 8080:80 weera-fmg:dev
 
 Then open `http://localhost:8080`.
 
-This environment currently does not have Docker available, so Dockerfile verification is limited to source review and the production Vite build until Docker is installed locally.
+Or use Docker Compose:
+
+```bash
+docker compose up --build
+```
+
+The container serves the static Vite build through nginx with SPA fallback, long-lived asset caching, and a root-page healthcheck.
+
+This environment currently does not have Docker available, so Docker runtime verification is limited to source review, production Vite build, and browser smoke testing until Docker is installed locally.
 
 ## Current MVP Slice
 
@@ -84,6 +92,8 @@ The first working slice includes:
 - New map, undo, and redo controls.
 - Keyboard escape clears selection or cancels line placement.
 - Browser smoke coverage for new map, undo, redo, object placement, selected-object inspector, and PNG export download.
+- Docker Compose self-hosting entrypoint and nginx runtime config.
+- Export libraries are lazy-loaded only when exporting, reducing the initial app bundle.
 
 ## MVP Features
 

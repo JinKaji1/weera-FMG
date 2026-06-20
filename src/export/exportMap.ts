@@ -1,5 +1,3 @@
-import { jsPDF } from "jspdf";
-import { toBlob, toJpeg } from "html-to-image";
 import type { ExportFormat } from "../domain/mapTypes";
 
 export interface ExportRequest {
@@ -12,6 +10,7 @@ export interface ExportRequest {
 }
 
 export async function exportMapBlob(request: ExportRequest): Promise<Blob> {
+  const htmlToImage = await import("html-to-image");
   const baseOptions = {
     pixelRatio: request.pixelRatio,
     backgroundColor: request.backgroundColor,
@@ -19,19 +18,20 @@ export async function exportMapBlob(request: ExportRequest): Promise<Blob> {
   };
 
   if (request.format === "jpeg") {
-    const dataUrl = await toJpeg(request.node, {
+    const dataUrl = await htmlToImage.toJpeg(request.node, {
       ...baseOptions,
       quality: request.quality
     });
     return dataUrlToBlob(dataUrl, "image/jpeg");
   }
 
-  const blob = await toBlob(request.node, baseOptions);
+  const blob = await htmlToImage.toBlob(request.node, baseOptions);
 
   if (!blob) throw new Error("Map export failed");
   if (request.format === "png") return new Blob([blob], { type: "image/png" });
 
   const dataUrl = await blobToDataUrl(blob);
+  const { jsPDF } = await import("jspdf");
   const width = request.node.clientWidth || request.node.getBoundingClientRect().width;
   const height = request.node.clientHeight || request.node.getBoundingClientRect().height;
   const pdf = new jsPDF({
