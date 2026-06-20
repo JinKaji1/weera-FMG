@@ -43,6 +43,7 @@ npm run smoke:browser
 ```
 
 The smoke test opens the editor, generates a seeded map, places a castle stamp, opens the export dialog, and writes screenshots to `tmp/smoke/`.
+Set `SMOKE_BASE_URL` to target a different host or port.
 
 ## Docker
 
@@ -94,6 +95,7 @@ The first working slice includes:
 - Browser smoke coverage for new map, undo, redo, object placement, selected-object inspector, and PNG export download.
 - Docker Compose self-hosting entrypoint and nginx runtime config.
 - Export libraries are lazy-loaded only when exporting, reducing the initial app bundle.
+- GitHub Actions CI for tests, production build, browser smoke export, and Docker image build.
 
 ## MVP Features
 

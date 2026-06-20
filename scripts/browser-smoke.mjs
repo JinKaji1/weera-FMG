@@ -1,11 +1,9 @@
-import { createRequire } from "node:module";
 import { mkdir, stat, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
-
-const require = createRequire(import.meta.url);
-const { chromium } = require("/Users/imalkaweerasundara/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright");
+import { chromium } from "playwright";
 
 const outputDir = new URL("../tmp/smoke/", import.meta.url);
+const baseUrl = process.env.SMOKE_BASE_URL ?? "http://127.0.0.1:5173/";
 await mkdir(outputDir, { recursive: true });
 
 const browser = await chromium.launch({
@@ -18,7 +16,7 @@ try {
     deviceScaleFactor: 1
   });
 
-  await page.goto("http://127.0.0.1:5173/", { waitUntil: "networkidle" });
+  await page.goto(baseUrl, { waitUntil: "networkidle" });
   const initialTitle = await page.locator('input[aria-label="Map title"]').inputValue();
   await page.getByRole("button", { name: /^New$/i }).click();
   const newTitle = await page.locator('input[aria-label="Map title"]').inputValue();
