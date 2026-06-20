@@ -1,5 +1,6 @@
 import { createRequire } from "node:module";
 import { mkdir, stat, writeFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 
 const require = createRequire(import.meta.url);
 const { chromium } = require("/Users/imalkaweerasundara/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright");
@@ -18,10 +19,21 @@ try {
   });
 
   await page.goto("http://127.0.0.1:5173/", { waitUntil: "networkidle" });
+  const initialTitle = await page.locator('input[aria-label="Map title"]').inputValue();
+  await page.getByRole("button", { name: /^New$/i }).click();
+  const newTitle = await page.locator('input[aria-label="Map title"]').inputValue();
+  await page.getByRole("button", { name: /^Undo$/i }).click();
+  const undoTitle = await page.locator('input[aria-label="Map title"]').inputValue();
+
   await page.getByRole("button", { name: /Generate/i }).first().click();
   await page.getByRole("button", { name: /^object$/i }).click();
-  await page.locator('aside[aria-label="Tools"] select').selectOption("castle");
+  await page.getByLabel("Stamp type").selectOption("castle");
+  const objectCountBeforePlacement = await page.locator(".map-object").count();
   await page.locator(".map-canvas").click({ position: { x: 520, y: 360 } });
+  const objectCountAfterPlacement = await page.locator(".map-object").count();
+  await page.getByRole("button", { name: /^Undo$/i }).click();
+  const objectCountAfterUndo = await page.locator(".map-object").count();
+  await page.getByRole("button", { name: /^Redo$/i }).click();
   await page.locator(".map-object").last().click();
   await page.getByLabel("Selected object").waitFor();
 
@@ -37,15 +49,21 @@ try {
   const downloadPromise = page.waitForEvent("download");
   await page.getByRole("button", { name: /Download/i }).click();
   const download = await downloadPromise;
-  const exportPath = new URL("export.png", outputDir);
-  await download.saveAs(exportPath.pathname);
+  const exportPath = fileURLToPath(new URL("export.png", outputDir));
+  await download.saveAs(exportPath);
   const exportStats = await stat(exportPath);
 
   const report = {
+    initialTitle,
+    newTitle,
+    undoTitle,
     title: await page.locator('input[aria-label="Map title"]').inputValue(),
     terrainLayerCount: await page.locator('[data-layer="terrain"]').count(),
     objectLayerCount: await page.locator('[data-layer="objects"]').count(),
     selectedObjectInspectorCount: await page.getByLabel("Selected object").count(),
+    objectCountBeforePlacement,
+    objectCountAfterPlacement,
+    objectCountAfterUndo,
     exportDialogCount,
     downloadedExport: download.suggestedFilename(),
     downloadedExportBytes: exportStats.size,

@@ -33,8 +33,14 @@ function initialProject() {
   }
 }
 
+function isEditableTarget(target: EventTarget | null) {
+  return target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement;
+}
+
 export default function App() {
   const [project, setProject] = useState<MapProject>(() => initialProject());
+  const [pastProjects, setPastProjects] = useState<MapProject[]>([]);
+  const [futureProjects, setFutureProjects] = useState<MapProject[]>([]);
   const [mode, setMode] = useState<ToolMode>("brush");
   const [brush, setBrush] = useState<BrushDefinition>(terrainBrushes[0]);
   const [brushSize, setBrushSize] = useState(2);
@@ -58,23 +64,84 @@ export default function App() {
   );
 
   function updateProject(next: MapProject, message: string) {
+    setPastProjects((past) => [...past.slice(-24), project]);
+    setFutureProjects([]);
     setProject(next);
     setStatus(message);
   }
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
+      if (isEditableTarget(event.target)) return;
+
+      const isUndo = (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "z" && !event.shiftKey;
+      const isRedo =
+        ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "y") ||
+        ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key.toLowerCase() === "z");
+
+      if (isUndo) {
+        event.preventDefault();
+        handleUndo();
+        return;
+      }
+
+      if (isRedo) {
+        event.preventDefault();
+        handleRedo();
+        return;
+      }
+
+      if (event.key === "Escape") {
+        setPendingPathStart(undefined);
+        setSelectedObjectId(undefined);
+        setStatus("Selection cleared");
+        return;
+      }
+
       if (event.key !== "Delete" && event.key !== "Backspace") return;
       if (!selectedObjectId) return;
       event.preventDefault();
-      setProject((current) => removeMapObject(current, selectedObjectId));
+      updateProject(removeMapObject(project, selectedObjectId), "Deleted selected object");
       setSelectedObjectId(undefined);
-      setStatus("Deleted selected object");
     }
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedObjectId]);
+  }, [futureProjects, pastProjects, project, selectedObjectId]);
+
+  function handleUndo() {
+    setPastProjects((past) => {
+      const previous = past.at(-1);
+      if (!previous) return past;
+      setFutureProjects((future) => [project, ...future.slice(0, 24)]);
+      setProject(previous);
+      setSelectedObjectId(undefined);
+      setPendingPathStart(undefined);
+      setStatus("Undo");
+      return past.slice(0, -1);
+    });
+  }
+
+  function handleRedo() {
+    setFutureProjects((future) => {
+      const next = future[0];
+      if (!next) return future;
+      setPastProjects((past) => [...past.slice(-24), project]);
+      setProject(next);
+      setSelectedObjectId(undefined);
+      setPendingPathStart(undefined);
+      setStatus("Redo");
+      return future.slice(1);
+    });
+  }
+
+  function handleNewProject() {
+    const seed = `realm-${Date.now().toString(36)}`;
+    const next = generateMap({ ...project.generator, seed });
+    updateProject({ ...next, title: "Untitled Realm" }, "New map created");
+    setSelectedObjectId(undefined);
+    setPendingPathStart(undefined);
+  }
 
   function handleGenerate() {
     updateProject(generateMap(project.generator), "Generated from seed");
@@ -185,6 +252,11 @@ export default function App() {
         status={status}
         onTitleChange={(title) => setProject({ ...project, title, updatedAt: new Date().toISOString() })}
         onGenerate={handleGenerate}
+        onNewProject={handleNewProject}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
+        canUndo={pastProjects.length > 0}
+        canRedo={futureProjects.length > 0}
         onSave={handleSave}
         onDownloadProject={handleDownloadProject}
         onOpenProject={() => fileInputRef.current?.click()}

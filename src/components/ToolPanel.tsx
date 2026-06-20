@@ -66,37 +66,46 @@ export function ToolPanel({
 
       <div className="panel-section">
         <h2>Stamps</h2>
-        <select value={objectKind} onChange={(event) => onObjectKindChange(event.target.value as MapObjectKind)}>
-          {objectKinds.map((kind) => (
-            <option key={kind} value={kind}>
-              {kind}
-            </option>
-          ))}
-        </select>
+        <label className="field">
+          <span>Stamp type</span>
+          <select value={objectKind} onChange={(event) => onObjectKindChange(event.target.value as MapObjectKind)}>
+            {objectKinds.map((kind) => (
+              <option key={kind} value={kind}>
+                {kind}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
 
       <div className="panel-section">
         <h2>Lines</h2>
-        <select value={pathKind} onChange={(event) => onPathKindChange(event.target.value as PathKind)}>
-          {pathKinds.map((kind) => (
-            <option key={kind} value={kind}>
-              {kind}
-            </option>
-          ))}
-        </select>
+        <label className="field">
+          <span>Line type</span>
+          <select value={pathKind} onChange={(event) => onPathKindChange(event.target.value as PathKind)}>
+            {pathKinds.map((kind) => (
+              <option key={kind} value={kind}>
+                {kind}
+              </option>
+            ))}
+          </select>
+        </label>
         <p className="tool-hint">{hasPendingPathStart ? "Click an end point to finish the line." : "Click once for start, again for end."}</p>
         {hasPendingPathStart && <button onClick={onClearPendingPath}>Cancel line</button>}
       </div>
 
       <div className="panel-section">
         <h2>Shapes</h2>
-        <select value={shapeKind} onChange={(event) => onShapeKindChange(event.target.value as ShapeKind)}>
-          {shapeKinds.map((kind) => (
-            <option key={kind} value={kind}>
-              {kind}
-            </option>
-          ))}
-        </select>
+        <label className="field">
+          <span>Shape type</span>
+          <select value={shapeKind} onChange={(event) => onShapeKindChange(event.target.value as ShapeKind)}>
+            {shapeKinds.map((kind) => (
+              <option key={kind} value={kind}>
+                {kind}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
     </aside>
   );

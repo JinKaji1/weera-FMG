@@ -81,6 +81,9 @@ The first working slice includes:
 - Decorated SVG terrain details and coastline styling.
 - Explicit line and shape type selectors for roads, rivers, borders, walls, regions, lakes, forests, marshes, deserts, and custom areas.
 - Format-aware export handling for `PNG`, `JPG`, and `PDF`, including JPEG quality control.
+- New map, undo, and redo controls.
+- Keyboard escape clears selection or cancels line placement.
+- Browser smoke coverage for new map, undo, redo, object placement, selected-object inspector, and PNG export download.
 
 ## MVP Features
 
