@@ -38,18 +38,9 @@ try {
   const editorScreenshot = await page.screenshot({ fullPage: true });
   await writeFile(new URL("editor.png", outputDir), editorScreenshot);
 
-  await page.getByRole("button", { name: /Export/i }).click();
-  await page.getByRole("dialog", { name: /Export map/i }).waitFor();
-  const exportDialogCount = await page.getByRole("dialog", { name: /Export map/i }).count();
-  const exportScreenshot = await page.screenshot({ fullPage: true });
-  await writeFile(new URL("export-dialog.png", outputDir), exportScreenshot);
-
-  const downloadPromise = page.waitForEvent("download");
-  await page.getByRole("button", { name: /Download/i }).click();
-  const download = await downloadPromise;
-  const exportPath = fileURLToPath(new URL("export.png", outputDir));
-  await download.saveAs(exportPath);
-  const exportStats = await stat(exportPath);
+  const pngExport = await downloadExport(page, "png");
+  const jpegExport = await downloadExport(page, "jpeg");
+  const pdfExport = await downloadExport(page, "pdf");
 
   const report = {
     initialTitle,
@@ -62,9 +53,11 @@ try {
     objectCountBeforePlacement,
     objectCountAfterPlacement,
     objectCountAfterUndo,
-    exportDialogCount,
-    downloadedExport: download.suggestedFilename(),
-    downloadedExportBytes: exportStats.size,
+    exports: {
+      png: pngExport,
+      jpeg: jpegExport,
+      pdf: pdfExport
+    },
     status: await page.locator(".status-text").innerText()
   };
 
@@ -72,4 +65,28 @@ try {
   console.log(JSON.stringify(report, null, 2));
 } finally {
   await browser.close();
+}
+
+async function downloadExport(page, format) {
+  await page.getByRole("button", { name: /Export/i }).click();
+  await page.getByRole("dialog", { name: /Export map/i }).waitFor();
+  await page.getByLabel("Format").selectOption(format);
+
+  if (format === "png") {
+    const exportScreenshot = await page.screenshot({ fullPage: true });
+    await writeFile(new URL("export-dialog.png", outputDir), exportScreenshot);
+  }
+
+  const downloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: /Download/i }).click();
+  const download = await downloadPromise;
+  const extension = format === "jpeg" ? "jpg" : format;
+  const exportPath = fileURLToPath(new URL(`export.${extension}`, outputDir));
+  await download.saveAs(exportPath);
+  const exportStats = await stat(exportPath);
+
+  return {
+    filename: download.suggestedFilename(),
+    bytes: exportStats.size
+  };
 }
