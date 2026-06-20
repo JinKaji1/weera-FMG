@@ -1,0 +1,10 @@
+node_modules
+dist
+coverage
+.npm-cache
+tmp
+*.tsbuildinfo
+vite.config.js
+vite.config.d.ts
+.DS_Store
+*.log
