@@ -16,6 +16,67 @@ The first implementation target is a Dockerized web app:
 - Editable project files.
 - Final exports as image or document files.
 
+## Run Locally
+
+Install dependencies:
+
+```bash
+npm install --cache .npm-cache
+```
+
+Start the development server:
+
+```bash
+npm run dev
+```
+
+Verify the app:
+
+```bash
+npm run verify
+```
+
+Run the browser smoke test after the dev server is running:
+
+```bash
+npm run smoke:browser
+```
+
+The smoke test opens the editor, generates a seeded map, places a castle stamp, opens the export dialog, and writes screenshots to `tmp/smoke/`.
+
+## Docker
+
+Build the self-hostable image:
+
+```bash
+docker build -t weera-fmg:dev .
+```
+
+Run it:
+
+```bash
+docker run --rm -p 8080:80 weera-fmg:dev
+```
+
+Then open `http://localhost:8080`.
+
+This environment currently does not have Docker available, so Dockerfile verification is limited to source review and the production Vite build until Docker is installed locally.
+
+## Current MVP Slice
+
+The first working slice includes:
+
+- Vite + React + TypeScript app shell.
+- Deterministic seeded generator.
+- SVG map renderer with terrain, resources, objects, labels, rivers, roads, and grid layers.
+- Terrain brushes for sea, river, mountain, desert, forest, marsh, grass, hills, and resources.
+- Object stamp placement for cities, castles, towers, villages, bridges, ports, ruins, roads, monsters, and landmarks.
+- Label, line, and shape creation tools.
+- Layer toggles and style presets.
+- Local project save/load and project JSON download/upload.
+- Export dialog for `PNG`, `JPEG`, and `PDF`.
+- Browser smoke test for the primary editor workflow.
+
 ## MVP Features
 
 ### Inspiration Sources
