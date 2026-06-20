@@ -83,6 +83,7 @@ The first working slice includes:
 - Label, line, and shape creation tools.
 - Layer toggles and style presets.
 - Local project save/load and project JSON download/upload.
+- Project sharing through native browser share where available, with project-file download fallback.
 - Export dialog for `PNG`, `JPEG`, and `PDF`.
 - Browser smoke test for the primary editor workflow.
 - Draggable/selectable stamps with a selected-object inspector for name, scale, rotation, and delete.

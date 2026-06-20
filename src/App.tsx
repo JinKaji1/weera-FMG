@@ -16,7 +16,7 @@ import { addLabel, addMapObject, addPath, addShape, moveMapObject, removeMapObje
 import { terrainBrushes, type BrushDefinition } from "./editor/tools";
 import { downloadBlob, exportExtension, exportMapBlob } from "./export/exportMap";
 import { generateMap } from "./generation/generateMap";
-import { downloadText, loadProject, parseProject, saveProject, serializeProject } from "./persistence/projectStorage";
+import { createProjectFile, downloadText, loadProject, parseProject, projectFilename, saveProject, serializeProject } from "./persistence/projectStorage";
 import { ExportDialog } from "./components/ExportDialog";
 import { GeneratorPanel } from "./components/GeneratorPanel";
 import { LayerPanel } from "./components/LayerPanel";
@@ -208,8 +208,33 @@ export default function App() {
   }
 
   function handleDownloadProject() {
-    downloadText(`${project.title.replace(/\W+/g, "-").toLowerCase() || "fantasy-map"}.fmg.json`, serializeProject(project));
+    downloadText(projectFilename(project), serializeProject(project));
     setStatus("Project downloaded");
+  }
+
+  async function handleShareProject() {
+    const file = createProjectFile(project);
+
+    try {
+      if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+        await navigator.share({
+          title: project.title,
+          text: "Fantasy Map Maker project",
+          files: [file]
+        });
+        setStatus("Project shared");
+        return;
+      }
+
+      downloadText(file.name, serializeProject(project), file.type);
+      setStatus("Sharing unavailable; project downloaded");
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        setStatus("Share cancelled");
+        return;
+      }
+      setStatus(error instanceof Error ? error.message : "Share failed");
+    }
   }
 
   async function handleImportProject(file: File) {
@@ -259,6 +284,7 @@ export default function App() {
         canRedo={futureProjects.length > 0}
         onSave={handleSave}
         onDownloadProject={handleDownloadProject}
+        onShareProject={() => void handleShareProject()}
         onOpenProject={() => fileInputRef.current?.click()}
         onDeleteSelected={() => {
           if (!selectedObjectId) return;

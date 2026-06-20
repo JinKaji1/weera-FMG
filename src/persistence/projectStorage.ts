@@ -14,6 +14,19 @@ export function parseProject(json: string): MapProject {
   return parsed as MapProject;
 }
 
+export function projectFilename(project: Pick<MapProject, "title">) {
+  const slug = project.title
+    .trim()
+    .replace(/[^a-z0-9]+/gi, "-")
+    .replace(/^-+|-+$/g, "")
+    .toLowerCase();
+  return `${slug || "fantasy-map"}.fmg.json`;
+}
+
+export function createProjectFile(project: MapProject) {
+  return new File([serializeProject(project)], projectFilename(project), { type: "application/json" });
+}
+
 export function saveProject(project: MapProject, storage: Storage = window.localStorage) {
   storage.setItem(STORAGE_KEY, serializeProject(project));
 }

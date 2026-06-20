@@ -1,4 +1,4 @@
-import { Download, FileDown, FolderOpen, RotateCcw, RotateCw, Save, Sparkles, Trash2 } from "lucide-react";
+import { Download, FileDown, FolderOpen, RotateCcw, RotateCw, Save, Share2, Sparkles, Trash2 } from "lucide-react";
 
 interface ToolbarProps {
   title: string;
@@ -6,6 +6,7 @@ interface ToolbarProps {
   onTitleChange: (title: string) => void;
   onSave: () => void;
   onDownloadProject: () => void;
+  onShareProject: () => void;
   onOpenProject: () => void;
   onNewProject: () => void;
   onUndo: () => void;
@@ -23,6 +24,7 @@ export function Toolbar({
   onTitleChange,
   onSave,
   onDownloadProject,
+  onShareProject,
   onOpenProject,
   onNewProject,
   onUndo,
@@ -63,6 +65,10 @@ export function Toolbar({
         <button title="Download project" onClick={onDownloadProject}>
           <Download size={17} />
           Project
+        </button>
+        <button title="Share project" onClick={onShareProject}>
+          <Share2 size={17} />
+          Share
         </button>
         <button title="Open project" onClick={onOpenProject}>
           <FolderOpen size={17} />
