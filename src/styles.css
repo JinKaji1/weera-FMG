@@ -200,6 +200,13 @@ select {
   font-weight: 650;
 }
 
+.tool-hint {
+  color: #aeb8b5;
+  font-size: 0.76rem;
+  line-height: 1.35;
+  margin: 0.5rem 0;
+}
+
 .layer-list {
   display: grid;
   gap: 0.2rem;

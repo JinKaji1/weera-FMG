@@ -1,5 +1,5 @@
 import { createRequire } from "node:module";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, stat, writeFile } from "node:fs/promises";
 
 const require = createRequire(import.meta.url);
 const { chromium } = require("/Users/imalkaweerasundara/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright");
@@ -30,16 +30,25 @@ try {
 
   await page.getByRole("button", { name: /Export/i }).click();
   await page.getByRole("dialog", { name: /Export map/i }).waitFor();
-
+  const exportDialogCount = await page.getByRole("dialog", { name: /Export map/i }).count();
   const exportScreenshot = await page.screenshot({ fullPage: true });
   await writeFile(new URL("export-dialog.png", outputDir), exportScreenshot);
+
+  const downloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: /Download/i }).click();
+  const download = await downloadPromise;
+  const exportPath = new URL("export.png", outputDir);
+  await download.saveAs(exportPath.pathname);
+  const exportStats = await stat(exportPath);
 
   const report = {
     title: await page.locator('input[aria-label="Map title"]').inputValue(),
     terrainLayerCount: await page.locator('[data-layer="terrain"]').count(),
     objectLayerCount: await page.locator('[data-layer="objects"]').count(),
     selectedObjectInspectorCount: await page.getByLabel("Selected object").count(),
-    exportDialogCount: await page.getByRole("dialog", { name: /Export map/i }).count(),
+    exportDialogCount,
+    downloadedExport: download.suggestedFilename(),
+    downloadedExportBytes: exportStats.size,
     status: await page.locator(".status-text").innerText()
   };
 

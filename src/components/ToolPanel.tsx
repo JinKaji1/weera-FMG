@@ -1,16 +1,22 @@
-import type { MapObjectKind, ToolMode } from "../domain/mapTypes";
+import type { MapObjectKind, PathKind, ShapeKind, ToolMode } from "../domain/mapTypes";
 import type { BrushDefinition } from "../editor/tools";
-import { objectKinds, terrainBrushes, toolModes } from "../editor/tools";
+import { objectKinds, pathKinds, shapeKinds, terrainBrushes, toolModes } from "../editor/tools";
 
 interface ToolPanelProps {
   mode: ToolMode;
   brush: BrushDefinition;
   brushSize: number;
   objectKind: MapObjectKind;
+  pathKind: PathKind;
+  shapeKind: ShapeKind;
+  hasPendingPathStart: boolean;
   onModeChange: (mode: ToolMode) => void;
   onBrushChange: (brush: BrushDefinition) => void;
   onBrushSizeChange: (size: number) => void;
   onObjectKindChange: (kind: MapObjectKind) => void;
+  onPathKindChange: (kind: PathKind) => void;
+  onShapeKindChange: (kind: ShapeKind) => void;
+  onClearPendingPath: () => void;
 }
 
 export function ToolPanel({
@@ -18,10 +24,16 @@ export function ToolPanel({
   brush,
   brushSize,
   objectKind,
+  pathKind,
+  shapeKind,
+  hasPendingPathStart,
   onModeChange,
   onBrushChange,
   onBrushSizeChange,
-  onObjectKindChange
+  onObjectKindChange,
+  onPathKindChange,
+  onShapeKindChange,
+  onClearPendingPath
 }: ToolPanelProps) {
   return (
     <aside className="panel tool-panel" aria-label="Tools">
@@ -56,6 +68,30 @@ export function ToolPanel({
         <h2>Stamps</h2>
         <select value={objectKind} onChange={(event) => onObjectKindChange(event.target.value as MapObjectKind)}>
           {objectKinds.map((kind) => (
+            <option key={kind} value={kind}>
+              {kind}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="panel-section">
+        <h2>Lines</h2>
+        <select value={pathKind} onChange={(event) => onPathKindChange(event.target.value as PathKind)}>
+          {pathKinds.map((kind) => (
+            <option key={kind} value={kind}>
+              {kind}
+            </option>
+          ))}
+        </select>
+        <p className="tool-hint">{hasPendingPathStart ? "Click an end point to finish the line." : "Click once for start, again for end."}</p>
+        {hasPendingPathStart && <button onClick={onClearPendingPath}>Cancel line</button>}
+      </div>
+
+      <div className="panel-section">
+        <h2>Shapes</h2>
+        <select value={shapeKind} onChange={(event) => onShapeKindChange(event.target.value as ShapeKind)}>
+          {shapeKinds.map((kind) => (
             <option key={kind} value={kind}>
               {kind}
             </option>

@@ -1,9 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { DEFAULT_LAYERS, type ExportFormat, type GeneratorSettings, type MapObject, type MapObjectKind, type MapProject, type Point, type ToolMode } from "./domain/mapTypes";
+import {
+  DEFAULT_LAYERS,
+  type ExportFormat,
+  type GeneratorSettings,
+  type MapObject,
+  type MapObjectKind,
+  type MapProject,
+  type PathKind,
+  type Point,
+  type ShapeKind,
+  type ToolMode
+} from "./domain/mapTypes";
 import { applyBrush } from "./editor/applyBrush";
 import { addLabel, addMapObject, addPath, addShape, moveMapObject, removeMapObject, updateMapObject } from "./editor/objectEditing";
 import { terrainBrushes, type BrushDefinition } from "./editor/tools";
-import { downloadBlob, exportMapBlob } from "./export/exportMap";
+import { downloadBlob, exportExtension, exportMapBlob } from "./export/exportMap";
 import { generateMap } from "./generation/generateMap";
 import { downloadText, loadProject, parseProject, saveProject, serializeProject } from "./persistence/projectStorage";
 import { ExportDialog } from "./components/ExportDialog";
@@ -28,11 +39,14 @@ export default function App() {
   const [brush, setBrush] = useState<BrushDefinition>(terrainBrushes[0]);
   const [brushSize, setBrushSize] = useState(2);
   const [objectKind, setObjectKind] = useState<MapObjectKind>("city");
+  const [pathKind, setPathKind] = useState<PathKind>("road");
+  const [shapeKind, setShapeKind] = useState<ShapeKind>("region");
   const [selectedObjectId, setSelectedObjectId] = useState<string>();
   const [status, setStatus] = useState("Ready");
   const [exportOpen, setExportOpen] = useState(false);
   const [exportFormat, setExportFormat] = useState<ExportFormat>("png");
   const [exportScale, setExportScale] = useState(2);
+  const [exportQuality, setExportQuality] = useState(0.92);
   const [transparent, setTransparent] = useState(false);
   const [pendingPathStart, setPendingPathStart] = useState<Point>();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -94,18 +108,18 @@ export default function App() {
         setStatus("Path start set");
         return;
       }
-      updateProject(addPath(project, brush.id === "river" ? "river" : "road", [pendingPathStart, point]), "Added path");
+      updateProject(addPath(project, pathKind, [pendingPathStart, point]), `Added ${pathKind}`);
       setPendingPathStart(undefined);
     }
     if (mode === "shape") {
       updateProject(
-        addShape(project, "region", [
+        addShape(project, shapeKind, [
           point,
           { x: point.x + 4, y: point.y },
           { x: point.x + 3, y: point.y + 3 },
           { x: point.x - 1, y: point.y + 2 }
         ]),
-        "Added region"
+        `Added ${shapeKind}`
       );
     }
   }
@@ -133,7 +147,10 @@ export default function App() {
 
   async function handleImportProject(file: File) {
     try {
-      updateProject(parseProject(await file.text()), "Project opened");
+      const imported = parseProject(await file.text());
+      saveProject(imported);
+      setSelectedObjectId(undefined);
+      updateProject(imported, "Project opened and saved locally");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Could not open project");
     }
@@ -143,16 +160,22 @@ export default function App() {
     const node = exportRef.current?.querySelector("[data-export-node]") as HTMLElement | null;
     if (!node) return;
     setStatus("Exporting map");
-    const blob = await exportMapBlob({
-      node,
-      filename: project.title,
-      format: exportFormat,
-      pixelRatio: exportScale,
-      backgroundColor: transparent && exportFormat === "png" ? undefined : "#d8bf83"
-    });
-    downloadBlob(`${project.title.replace(/\W+/g, "-").toLowerCase() || "fantasy-map"}.${exportFormat}`, blob);
-    setExportOpen(false);
-    setStatus(`Exported ${exportFormat.toUpperCase()}`);
+    try {
+      const blob = await exportMapBlob({
+        node,
+        filename: project.title,
+        format: exportFormat,
+        pixelRatio: exportScale,
+        quality: exportQuality,
+        backgroundColor: transparent && exportFormat === "png" ? undefined : "#d8bf83"
+      });
+      const slug = project.title.replace(/\W+/g, "-").toLowerCase() || "fantasy-map";
+      downloadBlob(`${slug}.${exportExtension(exportFormat)}`, blob);
+      setExportOpen(false);
+      setStatus(`Exported ${exportFormat.toUpperCase()}`);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Export failed");
+    }
   }
 
   return (
@@ -190,10 +213,19 @@ export default function App() {
           brush={brush}
           brushSize={brushSize}
           objectKind={objectKind}
+          pathKind={pathKind}
+          shapeKind={shapeKind}
+          hasPendingPathStart={Boolean(pendingPathStart)}
           onModeChange={setMode}
           onBrushChange={setBrush}
           onBrushSizeChange={setBrushSize}
           onObjectKindChange={setObjectKind}
+          onPathKindChange={setPathKind}
+          onShapeKindChange={setShapeKind}
+          onClearPendingPath={() => {
+            setPendingPathStart(undefined);
+            setStatus("Line cancelled");
+          }}
         />
         <section className="canvas-column" ref={exportRef}>
           <MapCanvas
@@ -288,6 +320,8 @@ export default function App() {
         transparent={transparent}
         onFormatChange={setExportFormat}
         onScaleChange={setExportScale}
+        quality={exportQuality}
+        onQualityChange={setExportQuality}
         onTransparentChange={setTransparent}
         onClose={() => setExportOpen(false)}
         onExport={() => void handleExport()}

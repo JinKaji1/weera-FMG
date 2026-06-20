@@ -4,9 +4,11 @@ interface ExportDialogProps {
   isOpen: boolean;
   format: ExportFormat;
   scale: number;
+  quality: number;
   transparent: boolean;
   onFormatChange: (format: ExportFormat) => void;
   onScaleChange: (scale: number) => void;
+  onQualityChange: (quality: number) => void;
   onTransparentChange: (transparent: boolean) => void;
   onClose: () => void;
   onExport: () => void;
@@ -16,9 +18,11 @@ export function ExportDialog({
   isOpen,
   format,
   scale,
+  quality,
   transparent,
   onFormatChange,
   onScaleChange,
+  onQualityChange,
   onTransparentChange,
   onClose,
   onExport
@@ -41,6 +45,19 @@ export function ExportDialog({
           <span>Resolution</span>
           <input type="range" min={1} max={4} step={1} value={scale} onChange={(event) => onScaleChange(Number(event.target.value))} />
           <strong>{scale}x</strong>
+        </label>
+        <label className="control-row">
+          <span>Quality</span>
+          <input
+            type="range"
+            min={0.55}
+            max={1}
+            step={0.01}
+            value={quality}
+            disabled={format === "png"}
+            onChange={(event) => onQualityChange(Number(event.target.value))}
+          />
+          <strong>{Math.round(quality * 100)}%</strong>
         </label>
         <label className="toggle-row">
           <span>Transparent background</span>

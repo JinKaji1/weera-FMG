@@ -79,6 +79,8 @@ The first working slice includes:
 - Draggable/selectable stamps with a selected-object inspector for name, scale, rotation, and delete.
 - Two-click line creation for roads/rivers.
 - Decorated SVG terrain details and coastline styling.
+- Explicit line and shape type selectors for roads, rivers, borders, walls, regions, lakes, forests, marshes, deserts, and custom areas.
+- Format-aware export handling for `PNG`, `JPG`, and `PDF`, including JPEG quality control.
 
 ## MVP Features
 

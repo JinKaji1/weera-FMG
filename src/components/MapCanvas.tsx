@@ -34,6 +34,22 @@ const styleBackground: Record<StylePreset, string> = {
   ink: "#ded8c8"
 };
 
+const pathStyles = {
+  river: { stroke: "#3f86a1", strokeWidth: 0.22, dash: undefined },
+  road: { stroke: "#6e5431", strokeWidth: 0.13, dash: "5 5" },
+  border: { stroke: "#7d4a53", strokeWidth: 0.16, dash: "8 5 2 5" },
+  wall: { stroke: "#4b4338", strokeWidth: 0.18, dash: "3 3" }
+} as const;
+
+const shapeStyles = {
+  region: { fill: "#9b7f4a33", stroke: "#654f2b" },
+  lake: { fill: "#5d9bb777", stroke: "#2e6f88" },
+  forest: { fill: "#466c3f66", stroke: "#2f512d" },
+  marsh: { fill: "#6f805666", stroke: "#4c5a35" },
+  desert: { fill: "#d4b56f77", stroke: "#8a6a32" },
+  custom: { fill: "#806aa133", stroke: "#4b3d70" }
+} as const;
+
 interface MapCanvasProps {
   project: MapProject;
   selectedObjectId?: string;
@@ -202,47 +218,31 @@ export function MapCanvas({ project, selectedObjectId, onCanvasPoint, onObjectSe
               })}
           </g>
         )}
-        {project.layers.rivers && (
-          <g data-layer="rivers">
-            {project.paths
-              .filter((path) => path.kind === "river")
-              .map((path) => (
+        <g data-layer="paths">
+          {project.paths
+            .filter((path) => (path.kind === "river" ? project.layers.rivers : project.layers.roads))
+            .map((path) => {
+              const style = pathStyles[path.kind];
+              return (
                 <polyline
                   key={path.id}
                   points={pointsToString(path.points, project.cellSize)}
                   fill="none"
-                  stroke="#3f86a1"
+                  stroke={style.stroke}
+                  strokeDasharray={style.dash}
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  strokeWidth={project.cellSize * 0.22}
+                  strokeWidth={project.cellSize * style.strokeWidth}
                 />
-              ))}
-          </g>
-        )}
-        {project.layers.roads && (
-          <g data-layer="roads">
-            {project.paths
-              .filter((path) => path.kind === "road")
-              .map((path) => (
-                <polyline
-                  key={path.id}
-                  points={pointsToString(path.points, project.cellSize)}
-                  fill="none"
-                  stroke="#6e5431"
-                  strokeDasharray="5 5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={project.cellSize * 0.13}
-                />
-              ))}
-          </g>
-        )}
+              );
+            })}
+        </g>
         {project.shapes.map((shape) => (
           <polygon
             key={shape.id}
             points={pointsToString(shape.points, project.cellSize)}
-            fill="#9b7f4a33"
-            stroke="#654f2b"
+            fill={shapeStyles[shape.kind].fill}
+            stroke={shapeStyles[shape.kind].stroke}
             strokeWidth={1.2}
           />
         ))}
