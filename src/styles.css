@@ -227,9 +227,10 @@ select {
   background: #d8bf83;
   border: 1px solid #6e5d39;
   box-shadow: 0 18px 70px rgba(0, 0, 0, 0.38);
-  height: 100%;
+  height: auto;
   max-height: calc(100vh - 128px);
   max-width: 100%;
+  width: min(100%, calc((100vh - 128px) * 1.3333));
 }
 
 .map-canvas--atlas {
@@ -288,6 +289,13 @@ select {
 .map-resource {
   fill: #302311;
   font-size: 13px;
+  font-weight: 900;
+  pointer-events: none;
+}
+
+.terrain-detail {
+  fill: #24351f;
+  font-size: 11px;
   font-weight: 900;
   pointer-events: none;
 }

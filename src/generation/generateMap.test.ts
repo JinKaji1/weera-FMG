@@ -25,4 +25,13 @@ describe("generateMap", () => {
     expect(dense.objects.length).toBeGreaterThan(sparse.objects.length);
     expect(dense.paths.length).toBeGreaterThan(sparse.paths.length);
   });
+
+  it("creates substantial editable land on the default continent setting", () => {
+    const project = generateMap({ seed: "land-ratio", width: 48, height: 36, landmass: "continent" });
+    const landCount = project.terrain.filter((cell) => cell.terrain !== "sea").length;
+    const ratio = landCount / project.terrain.length;
+
+    expect(ratio).toBeGreaterThan(0.32);
+    expect(project.labels.some((label) => label.text.includes("Sea") || label.text.includes("Bay") || label.text.includes("Gulf"))).toBe(true);
+  });
 });

@@ -25,6 +25,10 @@ const realmNames = [
   "Greybarrow"
 ];
 
+const mountainNames = ["Frosthaul Peaks", "Kingsward Mountains", "Blackspine", "The White Teeth", "Stormwall"];
+const forestNames = ["Silverpine Forest", "Whispering Woods", "Mossfen", "Briarwild", "The Greenroud"];
+const seaNames = ["Greywater Gulf", "The Gilded Bay", "The Shivering Sea", "Saltmere", "Dawnwater"];
+
 function clamp(value: number, min = 0, max = 1) {
   return Math.max(min, Math.min(max, value));
 }
@@ -46,6 +50,29 @@ function smoothNoise(seed: string, x: number, y: number, salt: string) {
   const top = a * (1 - fx) + b * fx;
   const bottom = c * (1 - fx) + d * fx;
   return top * (1 - fy) + bottom * fy;
+}
+
+function landShape(seed: string, x: number, y: number, settings: GeneratorSettings) {
+  const cx = (settings.width - 1) / 2;
+  const cy = (settings.height - 1) / 2;
+  const nx = (x - cx) / Math.max(1, cx);
+  const ny = (y - cy) / Math.max(1, cy);
+  const central = 1 - clamp(Math.hypot(nx * 0.92, ny * 1.08));
+
+  if (settings.landmass === "continent") return central * 0.54;
+
+  const prng = createPrng(`${seed}:land-centers:${settings.landmass}`);
+  const centerCount = settings.landmass === "islands" ? 4 : 8;
+  let islands = 0;
+
+  for (let i = 0; i < centerCount; i += 1) {
+    const centerX = prng.next() * settings.width;
+    const centerY = prng.next() * settings.height;
+    const radius = (settings.landmass === "islands" ? 9 : 5) + prng.next() * 8;
+    islands = Math.max(islands, 1 - Math.hypot(x - centerX, y - centerY) / radius);
+  }
+
+  return clamp(islands) * (settings.landmass === "islands" ? 0.62 : 0.5) + central * 0.16;
 }
 
 function terrainFor(cell: Omit<TerrainCell, "terrain">, settings: GeneratorSettings): TerrainKind {
@@ -117,23 +144,21 @@ export function generateMap(settings: Partial<GeneratorSettings> = {}): MapProje
   const project = createDefaultProject(settings);
   const { generator } = project;
   const prng = createPrng(generator.seed);
-  const cx = (generator.width - 1) / 2;
-  const cy = (generator.height - 1) / 2;
-  const maxDistance = Math.hypot(cx, cy);
-
   project.terrain = project.terrain.map((cell) => {
+    const cx = (generator.width - 1) / 2;
+    const cy = (generator.height - 1) / 2;
+    const maxDistance = Math.hypot(cx, cy);
     const distance = Math.hypot(cell.x - cx, cell.y - cy) / maxDistance;
-    const continentalFalloff =
-      generator.landmass === "archipelago"
-        ? distance * 0.48
-        : generator.landmass === "islands"
-          ? distance * 0.62
-          : distance * 0.76;
+    const edgeDistance = Math.min(cell.x, cell.y, generator.width - 1 - cell.x, generator.height - 1 - cell.y);
+    const oceanRim = (1 - clamp(edgeDistance / 5)) * (generator.landmass === "continent" ? 0.3 : 0.42);
+    const edgeFalloff = Math.pow(distance, 1.65) * (generator.landmass === "continent" ? 0.28 : 0.34);
     const elevation = clamp(
-      0.2 +
-        smoothNoise(generator.seed, cell.x / 6, cell.y / 6, "elevation") * 0.56 +
-        smoothNoise(generator.seed, cell.x / 15, cell.y / 15, "large") * 0.34 -
-        continentalFalloff
+      0.12 +
+        landShape(generator.seed, cell.x, cell.y, generator) +
+        smoothNoise(generator.seed, cell.x / 5, cell.y / 5, "elevation") * 0.28 +
+        smoothNoise(generator.seed, cell.x / 13, cell.y / 13, "large") * 0.22 -
+        edgeFalloff -
+        oceanRim
     );
     const moisture = clamp(
       smoothNoise(generator.seed, cell.x / 8, cell.y / 8, "moisture") * 0.72 +
@@ -149,6 +174,7 @@ export function generateMap(settings: Partial<GeneratorSettings> = {}): MapProje
   });
 
   const land = findCells(project, (cell) => cell.terrain !== "sea");
+  if (land.length === 0) return project;
   const mountains = findCells(project, (cell) => cell.terrain === "mountain");
   const coasts = findCells(project, (cell) => {
     if (cell.terrain === "sea") return false;
@@ -247,6 +273,42 @@ export function generateMap(settings: Partial<GeneratorSettings> = {}): MapProje
       text: `${prng.pick(realmNames)} Reach`,
       x: compassCell.x,
       y: compassCell.y,
+      size: "large",
+      source: "generated"
+    });
+  }
+
+  const mountainCell = mountains[0];
+  if (mountainCell) {
+    labels.push({
+      id: "generated-mountain-label",
+      text: prng.pick(mountainNames),
+      x: mountainCell.x,
+      y: mountainCell.y,
+      size: "medium",
+      source: "generated"
+    });
+  }
+
+  const forestCell = findCells(project, (cell) => cell.terrain === "forest")[0];
+  if (forestCell) {
+    labels.push({
+      id: "generated-forest-label",
+      text: prng.pick(forestNames),
+      x: forestCell.x,
+      y: forestCell.y,
+      size: "medium",
+      source: "generated"
+    });
+  }
+
+  const seaCell = findCells(project, (cell) => cell.terrain === "sea")[0];
+  if (seaCell) {
+    labels.push({
+      id: "generated-sea-label",
+      text: prng.pick(seaNames),
+      x: Math.max(3, seaCell.x + 4),
+      y: Math.max(3, seaCell.y + 4),
       size: "large",
       source: "generated"
     });

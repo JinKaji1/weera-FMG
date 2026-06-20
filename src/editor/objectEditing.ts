@@ -26,6 +26,14 @@ export function moveMapObject(project: MapProject, id: string, point: Point): Ma
   };
 }
 
+export function updateMapObject(project: MapProject, id: string, patch: Partial<Omit<MapObject, "id">>): MapProject {
+  return {
+    ...project,
+    objects: project.objects.map((object) => (object.id === id ? { ...object, ...patch } : object)),
+    updatedAt: new Date().toISOString()
+  };
+}
+
 export function removeMapObject(project: MapProject, id: string): MapProject {
   return {
     ...project,

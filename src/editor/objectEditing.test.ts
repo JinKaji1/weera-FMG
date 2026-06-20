@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createDefaultProject } from "../domain/defaultProject";
-import { addLabel, addMapObject, addPath, addShape, moveMapObject, removeMapObject } from "./objectEditing";
+import { addLabel, addMapObject, addPath, addShape, moveMapObject, removeMapObject, updateMapObject } from "./objectEditing";
 
 describe("object editing helpers", () => {
   it("adds, moves, and removes map objects", () => {
@@ -12,6 +12,21 @@ describe("object editing helpers", () => {
     expect(withCity.objects[0]).toMatchObject({ kind: "city", name: "Aster", source: "manual" });
     expect(moved.objects[0]).toMatchObject({ x: 5, y: 6 });
     expect(removed.objects).toHaveLength(0);
+  });
+
+  it("updates map object presentation fields", () => {
+    const withCity = addMapObject(createDefaultProject(), "city", { x: 3, y: 4 }, "Aster");
+    const updated = updateMapObject(withCity, withCity.objects[0].id, {
+      name: "Asterhold",
+      rotation: 12,
+      scale: 1.4
+    });
+
+    expect(updated.objects[0]).toMatchObject({
+      name: "Asterhold",
+      rotation: 12,
+      scale: 1.4
+    });
   });
 
   it("adds labels, paths, and shapes", () => {

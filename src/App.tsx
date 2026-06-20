@@ -1,7 +1,7 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { DEFAULT_LAYERS, type ExportFormat, type GeneratorSettings, type MapObject, type MapObjectKind, type MapProject, type Point, type ToolMode } from "./domain/mapTypes";
 import { applyBrush } from "./editor/applyBrush";
-import { addLabel, addMapObject, addPath, addShape, removeMapObject } from "./editor/objectEditing";
+import { addLabel, addMapObject, addPath, addShape, moveMapObject, removeMapObject, updateMapObject } from "./editor/objectEditing";
 import { terrainBrushes, type BrushDefinition } from "./editor/tools";
 import { downloadBlob, exportMapBlob } from "./export/exportMap";
 import { generateMap } from "./generation/generateMap";
@@ -34,6 +34,7 @@ export default function App() {
   const [exportFormat, setExportFormat] = useState<ExportFormat>("png");
   const [exportScale, setExportScale] = useState(2);
   const [transparent, setTransparent] = useState(false);
+  const [pendingPathStart, setPendingPathStart] = useState<Point>();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const exportRef = useRef<HTMLDivElement>(null);
 
@@ -46,6 +47,20 @@ export default function App() {
     setProject(next);
     setStatus(message);
   }
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Delete" && event.key !== "Backspace") return;
+      if (!selectedObjectId) return;
+      event.preventDefault();
+      setProject((current) => removeMapObject(current, selectedObjectId));
+      setSelectedObjectId(undefined);
+      setStatus("Deleted selected object");
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedObjectId]);
 
   function handleGenerate() {
     updateProject(generateMap(project.generator), "Generated from seed");
@@ -73,7 +88,15 @@ export default function App() {
       const text = window.prompt("Label text", "New Place");
       if (text) updateProject(addLabel(project, point, text), "Added label");
     }
-    if (mode === "line") updateProject(addPath(project, brush.id === "river" ? "river" : "road", [point, { x: point.x + 4, y: point.y + 2 }]), "Added path");
+    if (mode === "line") {
+      if (!pendingPathStart) {
+        setPendingPathStart(point);
+        setStatus("Path start set");
+        return;
+      }
+      updateProject(addPath(project, brush.id === "river" ? "river" : "road", [pendingPathStart, point]), "Added path");
+      setPendingPathStart(undefined);
+    }
     if (mode === "shape") {
       updateProject(
         addShape(project, "region", [
@@ -90,6 +113,12 @@ export default function App() {
   function handleObjectSelect(object: MapObject) {
     setSelectedObjectId(object.id);
     setStatus(`Selected ${object.name}`);
+  }
+
+  function handleObjectMove(object: MapObject, point: Point) {
+    setSelectedObjectId(object.id);
+    setProject((current) => moveMapObject(current, object.id, point));
+    setStatus(`Moved ${object.name}`);
   }
 
   function handleSave() {
@@ -167,7 +196,13 @@ export default function App() {
           onObjectKindChange={setObjectKind}
         />
         <section className="canvas-column" ref={exportRef}>
-          <MapCanvas project={project} selectedObjectId={selectedObjectId} onCanvasPoint={handleCanvasPoint} onObjectSelect={handleObjectSelect} />
+          <MapCanvas
+            project={project}
+            selectedObjectId={selectedObjectId}
+            onCanvasPoint={handleCanvasPoint}
+            onObjectSelect={handleObjectSelect}
+            onObjectMove={handleObjectMove}
+          />
           <div className="canvas-footer">
             <span>{project.generator.width} x {project.generator.height}</span>
             <span>{selectedObject ? `Selected: ${selectedObject.name}` : "Click the map to edit"}</span>
@@ -186,6 +221,56 @@ export default function App() {
             onLayersChange={(layers) => setProject({ ...project, layers })}
             onStylePresetChange={(stylePreset) => setProject({ ...project, stylePreset })}
           />
+          {selectedObject && (
+            <section className="panel-section" aria-label="Selected object">
+              <h2>Selected Object</h2>
+              <label className="field">
+                <span>Name</span>
+                <input
+                  value={selectedObject.name}
+                  onChange={(event) =>
+                    setProject((current) => updateMapObject(current, selectedObject.id, { name: event.target.value }))
+                  }
+                />
+              </label>
+              <label className="control-row">
+                <span>Scale</span>
+                <input
+                  type="range"
+                  min={0.5}
+                  max={2}
+                  step={0.05}
+                  value={selectedObject.scale}
+                  onChange={(event) =>
+                    setProject((current) => updateMapObject(current, selectedObject.id, { scale: Number(event.target.value) }))
+                  }
+                />
+                <strong>{selectedObject.scale.toFixed(2)}</strong>
+              </label>
+              <label className="control-row">
+                <span>Rotate</span>
+                <input
+                  type="range"
+                  min={-180}
+                  max={180}
+                  step={1}
+                  value={selectedObject.rotation}
+                  onChange={(event) =>
+                    setProject((current) => updateMapObject(current, selectedObject.id, { rotation: Number(event.target.value) }))
+                  }
+                />
+                <strong>{selectedObject.rotation}</strong>
+              </label>
+              <button
+                onClick={() => {
+                  updateProject(removeMapObject(project, selectedObject.id), "Deleted selected object");
+                  setSelectedObjectId(undefined);
+                }}
+              >
+                Delete selected
+              </button>
+            </section>
+          )}
           <section className="panel-section">
             <h2>Export</h2>
             <div className="button-row">

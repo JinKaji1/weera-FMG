@@ -22,6 +22,9 @@ try {
   await page.getByRole("button", { name: /^object$/i }).click();
   await page.locator('aside[aria-label="Tools"] select').selectOption("castle");
   await page.locator(".map-canvas").click({ position: { x: 520, y: 360 } });
+  await page.locator(".map-object").last().click();
+  await page.getByLabel("Selected object").waitFor();
+
   const editorScreenshot = await page.screenshot({ fullPage: true });
   await writeFile(new URL("editor.png", outputDir), editorScreenshot);
 
@@ -35,6 +38,7 @@ try {
     title: await page.locator('input[aria-label="Map title"]').inputValue(),
     terrainLayerCount: await page.locator('[data-layer="terrain"]').count(),
     objectLayerCount: await page.locator('[data-layer="objects"]').count(),
+    selectedObjectInspectorCount: await page.getByLabel("Selected object").count(),
     exportDialogCount: await page.getByRole("dialog", { name: /Export map/i }).count(),
     status: await page.locator(".status-text").innerText()
   };

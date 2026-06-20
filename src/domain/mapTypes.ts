@@ -145,7 +145,7 @@ export const DEFAULT_GENERATOR: GeneratorSettings = {
   width: 48,
   height: 36,
   landmass: "continent",
-  seaLevel: 0.42,
+  seaLevel: 0.36,
   biomeBias: 0.5,
   mountainDensity: 0.28,
   forestDensity: 0.36,

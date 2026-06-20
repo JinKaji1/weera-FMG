@@ -76,6 +76,9 @@ The first working slice includes:
 - Local project save/load and project JSON download/upload.
 - Export dialog for `PNG`, `JPEG`, and `PDF`.
 - Browser smoke test for the primary editor workflow.
+- Draggable/selectable stamps with a selected-object inspector for name, scale, rotation, and delete.
+- Two-click line creation for roads/rivers.
+- Decorated SVG terrain details and coastline styling.
 
 ## MVP Features
 

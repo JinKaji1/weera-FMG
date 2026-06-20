@@ -9,7 +9,7 @@ describe("MapCanvas", () => {
     const project = generateMap({ seed: "canvas", width: 8, height: 6 });
     project.layers.labels = false;
 
-    renderApp(<MapCanvas project={project} onCanvasPoint={vi.fn()} onObjectSelect={vi.fn()} />);
+    renderApp(<MapCanvas project={project} onCanvasPoint={vi.fn()} onObjectSelect={vi.fn()} onObjectMove={vi.fn()} />);
 
     expect(screen.getByLabelText("Editable fantasy map")).toBeInTheDocument();
     expect(document.querySelector('[data-layer="terrain"]')).toBeInTheDocument();
